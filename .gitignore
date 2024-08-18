@@ -396,3 +396,60 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from sklearn.metrics import mean_squared_error,mean_absolute_error
+data = pd.read_csv('/content/traffic.csv')
+# Drop rows with NaN values
+data = data.dropna()
+# Convert 'DateTime' column to datetime
+data['DateTime'] = pd.to_datetime(data['DateTime'])
+# Extract numerical features from 'DateTime'
+data['Year'] = data['DateTime'].dt.year
+data['Month'] = data['DateTime'].dt.month
+data['Day'] = data['DateTime'].dt.day
+data['Hour'] = data['DateTime'].dt.hour
+# ... add other relevant time features as needed
+# Drop the original 'DateTime' column
+data = data.drop('DateTime', axis=1)
+# Normalize numerical columns (Vehicles)
+scaler = MinMaxScaler()
+data['Vehicles'] = scaler.fit_transform(data[['Vehicles']])
+# Split the data into features and target variable
+X = data[['Year', 'Month', 'Day', 'Hour', 'Junction']].values # Use the extracted
+numerical time features
+y = data['Vehicles'].values
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,
+random_state=42)
+# Define the neural network architecture
+model = Sequential([
+Dense(64,activation='relu',input_shape=(X_train.shape[1],)),
+Dense(64, activation='relu'),
+Dense(1) # Output layer (1 neuron for predicting Vehicles)
+])
+# Compile the model
+model.compile(optimizer='adam', loss='mean_squared_error')
+# Train the model
+model.fit(X_train, y_train, epochs=5, batch_size=32, validation_split=0.1)
+# Evaluate the model
+loss = model.evaluate(X_test, y_test)
+print(f'Test Loss: {loss}')
+# Make predictions
+predictions = model.predict(X_test)
+# Print predictions
+print("Predictions:")
+print(predictions)
+# Calculate Mean Squared Error (MSE)
+mse = mean_squared_error(y_test, predictions)
+print(f'Mean Squared Error (MSE): {mse}')
+# Calculate Mean Absolute Error (MAE)
+mae = mean_absolute_error(y_test, predictions)
+print(f'Mean Absolute Error (MAE): {mae}')
+# Calculate Root Mean Squared Error (RMSE)
+rmse = np.sqrt(mse)
+print(f'Root Mean Squared Error (RMSE): {rmse}')
